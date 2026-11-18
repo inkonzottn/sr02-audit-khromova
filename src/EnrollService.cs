@@ -105,8 +105,6 @@ public class EnrollService
             }
             repo.Enrollments.Add(e);
             log.Write("ENROLL " + e.Id + " " + l.Id + " " + c.Code + " " + price);
-            //if (l.Email != null)
-            //    Mailer.Send(l.Email, "Welcome to " + c.Title);
         }
         catch (Exception)
         {
@@ -118,11 +116,11 @@ public class EnrollService
     // перевірка пререквізитів (tmpLearner заповнює Enroll)
     private bool HasCompletedPrerequisites(Course c)
     {
-        bool flg = true;
+        bool satisfied = true;
         foreach (string p in c.Prerequisites)
             if (!tmpLearner.CompletedCourses.Contains(p))
-                flg = false;
-        return flg;
+                satisfied = false;
+        return satisfied;
     }
 
     // підтвердження оплати для Pending
