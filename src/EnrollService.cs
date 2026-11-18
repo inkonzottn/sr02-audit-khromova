@@ -211,18 +211,16 @@ public class EnrollService
         }
     }
 
-    private static void EnsureWindowIsOpen(Course course, Learner learner, DateTime today)
+    private void EnsureWindowIsOpen(Course c, Learner l, DateTime today)
     {
-        if (today < course.OpensOn || today >= course.ClosesOn)
-        {
-            if (learner.Plan != "CORP" || (today - course.ClosesOn).Days > CorpGraceDays)
-            {
-                Console.WriteLine("   enrollment window is closed for " + course.Code);
-                throw new EnrollmentException("enrollment window is closed for " + course.Code);
-            }
-        }
+        if (!(today < c.OpensOn || today >= c.ClosesOn))
+            return;
+        if (l.Plan == "CORP" && (today - c.ClosesOn).Days <= CorpGraceDays)
+            return;
+        Console.WriteLine("   enrollment window is closed for " + c.Code);
+        throw new EnrollmentException("enrollment window is closed for " + c.Code);
     }
-
+    
     private Course RequireCourse(string courseCode)
     {
         Course course = repo.FindCourse(courseCode);
