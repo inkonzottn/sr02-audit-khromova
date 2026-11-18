@@ -57,9 +57,7 @@ public class EnrollService
                 }
             }
             int taken = 0;
-            foreach (Enrollment x in repo.Enrollments)
-    if (x.CourseCode == c.Code && x.Status != EnrollmentStatus.Dropped)
-        taken++;
+            if (CountTaken(c) >= c.Seats)
             if (!HasCompletedPrerequisites(c))
                 return null;
             // Seats is never 0 here - the admin form does not allow it
@@ -194,5 +192,14 @@ public class EnrollService
         e.Status = EnrollmentStatus.Pending;
         repo.Enrollments.Add(e);
         Console.WriteLine("   [waitlist] " + l.Email + " moved to " + c.Code + " as #" + e.Id);
+    }
+
+    private int CountTaken(Course c)
+    {
+        int taken = 0;
+        foreach (Enrollment x in repo.Enrollments)
+            if (x.CourseCode == c.Code && x.Status != EnrollmentStatus.Dropped)
+                taken++;
+        return taken;
     }
 }
