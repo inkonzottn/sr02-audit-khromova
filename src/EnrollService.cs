@@ -18,7 +18,7 @@ public class EnrollService
 
     // Записує слухача на курс.
     // Returns null if the learner cannot be enrolled (the reason is in the audit log).
-    public Enrollment Enroll(int learnerId, string courseCode, string promo, bool payNow)
+    public Enrollment Enroll(int learnerId, string courseCode, string promo, bool payNow, DateTime? now = null)
     {
         Enrollment e = null;
         try
@@ -30,7 +30,7 @@ public class EnrollService
             if (c == null || c.Archived)
                 return null;
             tmpLearner = l;
-            DateTime today = DateTime.Today;
+            DateTime today = now ?? DateTime.Today;
             if (today < c.OpensOn || today >= c.ClosesOn)
             {
                 // corporate clients get 3 extra days after close (agreement with HR partners)
