@@ -8,7 +8,7 @@ public class EnrollService
     private PaymentService payments = new PaymentService();
     private PriceCalculator calc = new PriceCalculator();
     private AuditLog log = new AuditLog();
-    private Learner tmpLearner;      // learner being enrolled right now, see do_check
+    private Learner tmpLearner;      // learner being enrolled right now, see HasCompletedPrerequisites
     public decimal LastRefund;       // для екрана підтвердження
 
     private const int CorpGraceDays = 3;
@@ -60,7 +60,7 @@ public class EnrollService
             foreach (Enrollment x in repo.Enrollments)
     if (x.CourseCode == c.Code && x.Status != EnrollmentStatus.Dropped)
         taken++;
-            if (!do_check(c))
+            if (!HasCompletedPrerequisites(c))
                 return null;
             // Seats is never 0 here - the admin form does not allow it
             if (taken >= c.Seats)
@@ -116,7 +116,7 @@ public class EnrollService
     }
 
     // перевірка пререквізитів (tmpLearner заповнює Enroll)
-    private bool do_check(Course c)
+    private bool HasCompletedPrerequisites(Course c)
     {
         bool flg = true;
         foreach (string p in c.Prerequisites)
