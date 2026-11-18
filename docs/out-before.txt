@@ -1,0 +1,46 @@
+=== BrightPath Online School: enrollment run ===
+-- Enrollment
+ Anna -> CS101, WELCOME10, pay now: OK #1003 CS101 Active 108,00
+ Bohdan -> CS201, spring20, pay later: OK #1004 CS201 Pending 129,60
+ Olena -> CS201 without CS101: enrollment failed, please try again later
+   anna.k@example.com is already enrolled in CS101
+ Anna -> ' cs101 ' once again: enrollment failed, please try again later
+ Anna -> XX999: enrollment failed, please try again later
+ learner #42 -> CS101: enrollment failed, please try again later
+ Iryna -> DS301 (2 seats, both taken): enrollment failed, please try again later
+   enrollment window is closed for WEB110
+ Anna -> WEB110 (closes today): enrollment failed, please try again later
+ Taras, CORP -> UX120 (closed 2 days ago): OK #1005 UX120 Active 127,50
+ Taras, CORP -> PY150 (opens in 7 days): OK #1006 PY150 Pending 136,00
+ Iryna -> CS201, BLACKFRIDAY: OK #1007 CS201 Active 180,00
+ Olena -> CS101, pay now, balance 40: enrollment failed, please try again later
+ Anna -> course code null: enrollment failed, please try again later
+-- Status changes
+ activate #1004 (Bohdan pays for CS201): done
+ activate #1004 once again: operation failed
+ complete #1002 (Taras, CS101, score 92): done
+   [waitlist] iryna.t@example.com moved to DS301 as #1009
+ drop #1001 (Maksym, DS301), refund 207,00: done
+ complete #1001 after drop, score 90: operation failed
+ complete #1003 with score -5: operation failed
+ drop #9999: operation failed
+-- Wallets
+ charge -50 to Anna: Amount must not be negative
+ Anna Kovalenko [FREE] balance 192,00, invoiced 0,00
+ Bohdan Melnyk [PRO] balance 370,40, invoiced 0,00
+ Olena Shevchuk [STUDENT] balance 40,00, invoiced 0,00
+ Taras Bondar [CORP] balance 0,00, invoiced 127,50
+ Iryna Tkachenko [FREE] balance 820,00, invoiced 0,00
+ Maksym Lysenko [PRO] balance 407,00, invoiced 0,00
+-- Reports
+  Roster DS301 - Machine Learning Basics
+    #1000 Bohdan Melnyk <b.melnyk@example.com> Active
+    #1001 Maksym Lysenko <m.lysenko@example.com> Dropped
+    #1009 Iryna Tkachenko <iryna.t@example.com> Pending
+    seats 2/2, waitlist 0
+    revenue 207,00 UAH
+  Roster CS201 - Data Structures
+    seats 2/25, waitlist 0
+    revenue 309,60 UAH
+payment transactions: 5
+=== end of run ===

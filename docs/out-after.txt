@@ -1,0 +1,12 @@
+=== BrightPath Online School: enrollment run ===
+-- Enrollment
+ Anna -> CS101, WELCOME10, pay now: OK #1003 CS101 Active 108,00
+ Bohdan -> CS201, spring20, pay later: OK #1004 CS201 Pending 129,60
+ Olena -> CS201 without CS101: enrollment failed, please try again later
+   anna.k@example.com is already enrolled in CS101
+ Anna -> ' cs101 ' once again: enrollment failed, please try again later
+ Anna -> XX999: enrollment failed, please try again later
+ learner #42 -> CS101: enrollment failed, please try again later
+ Iryna -> DS301 (2 seats, both taken): enrollment failed, please try again later
+   enrollment window is closed for WEB110
+ Anna -> WEB110 (closes today): enrollment failed, please try again later
