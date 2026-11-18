@@ -42,19 +42,19 @@ public class PriceCalculator
     private const int MaxProgressForRefund = 30;
     private const int HalfRefundDivisor = 2;
 
-    // ціна курсу з урахуванням тарифного плану слухача
+    private static readonly Dictionary<string, decimal> PlanFactors =
+    new Dictionary<string, decimal>
+{
+    { "PRO", ProFactor }, { "CORP", CorpFactor }, { "STUDENT", StudentFactor }
+};
+
     public decimal BasePrice(Course c, Learner l)
     {
         decimal p = c.Price;
-        // long courses are cheaper; can't go below 0, cheapest course is 90
         if (c.Weeks > LongCourseWeeks)
             p = p - LongCourseDiscount;
-        switch (l.Plan)
-        {
-            case "PRO": p = p * ProFactor; break;
-            case "CORP": p = p * CorpFactor; break;
-            case "STUDENT": p = p * StudentFactor; break;
-        }
+        if (PlanFactors.TryGetValue(l.Plan, out decimal factor))
+            p = p * factor;
         return p;
     }
 
