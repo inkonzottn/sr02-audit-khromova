@@ -126,17 +126,7 @@ public class EnrollService
     {
         Learner learner = RequireLearner(learnerId);
         Course course = RequireCourse(courseCode);
-
-        if (course == null || course.Archived)
-            throw new EnrollmentException("course " + courseCode + " not available");
-        if (today < course.OpensOn || today >= course.ClosesOn)
-        {
-            if (learner.Plan != "CORP" || (today - course.ClosesOn).Days > CorpGraceDays)
-            {
-                Console.WriteLine("   enrollment window is closed for " + course.Code);
-                throw new EnrollmentException("enrollment window is closed for " + course.Code);
-            }
-        }
+        EnsureWindowIsOpen(course, learner, today);
         foreach (Enrollment x in repo.Enrollments)
         {
             if (x.CourseCode == course.Code && x.Status != EnrollmentStatus.Dropped
@@ -186,6 +176,18 @@ public class EnrollService
         repo.Enrollments.Add(e);
         log.Write("ENROLL " + e.Id + " " + learner.Id + " " + course.Code + " " + price);
         return e;
+    }
+
+    private static void EnsureWindowIsOpen(Course course, Learner learner, DateTime today)
+    {
+        if (today < course.OpensOn || today >= course.ClosesOn)
+        {
+            if (learner.Plan != "CORP" || (today - course.ClosesOn).Days > CorpGraceDays)
+            {
+                Console.WriteLine("   enrollment window is closed for " + course.Code);
+                throw new EnrollmentException("enrollment window is closed for " + course.Code);
+            }
+        }
     }
 
     private Course RequireCourse(string courseCode)
