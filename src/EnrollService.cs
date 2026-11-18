@@ -11,6 +11,12 @@ public class EnrollService
     private Learner tmpLearner;      // learner being enrolled right now, see do_check
     public decimal LastRefund;       // для екрана підтвердження
 
+    private const int CorpGraceDays = 3;
+    private const int PercentBase = 100;
+    private const int NewYearMonth = 1;
+    private const int MinPassScore = 60;
+    private const int MaxScore = 100;
+
     public EnrollService(CourseRepository r)
     {
         repo = r;
@@ -34,7 +40,7 @@ public class EnrollService
             if (today < c.OpensOn || today >= c.ClosesOn)
             {
                 // corporate clients get 3 extra days after close (agreement with HR partners)
-                if (l.Plan != "CORP" || (today - c.ClosesOn).Days > 3)
+                if (l.Plan != "CORP" || (today - c.ClosesOn).Days > CorpGraceDays)
                 {
                     Console.WriteLine("   enrollment window is closed for " + c.Code);
                     return null;
@@ -71,10 +77,10 @@ public class EnrollService
             {
                 promo = promo.Trim().ToUpper();
                 // тимчасово, поки нема дат дії: NEWYEAR - січень
-                if (promo == "NEWYEAR" && today.Month != 1)
+                if (promo == "NEWYEAR" && today.Month != NewYearMonth)
                     promo = "";
                 int pct = PromoCatalog.GetPercent(promo);
-                price = price - price * pct / 100;
+                price = price - price * pct / PercentBase;
             }
             e = new Enrollment();
             e.Id = CourseRepository.NextId++;
@@ -168,7 +174,7 @@ public class EnrollService
         if (e == null)
             return false;
         Learner l = repo.FindLearner(e.LearnerId);
-        if (score < 60 || score > 100)
+        if (score < MinPassScore  || score > MaxScore)
             return false;
         if (!e.ChangeStatus(EnrollmentStatus.Completed))
             return false;

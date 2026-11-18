@@ -32,18 +32,28 @@ public static class PromoCatalog
 
 public class PriceCalculator
 {
+    private const int LongCourseWeeks = 8;
+    private const decimal LongCourseDiscount = 20m;
+    private const decimal ProFactor = 0.9m;
+    private const decimal CorpFactor = 0.85m;
+    private const decimal StudentFactor = 0.5m;
+    private const int FullRefundDays = 7;
+    private const int HalfRefundDays = 14;
+    private const int MaxProgressForRefund = 30;
+    private const int HalfRefundDivisor = 2;
+
     // ціна курсу з урахуванням тарифного плану слухача
     public decimal BasePrice(Course c, Learner l)
     {
         decimal p = c.Price;
         // long courses are cheaper; can't go below 0, cheapest course is 90
-        if (c.Weeks > 8)
-            p = p - 20;
+        if (c.Weeks > LongCourseWeeks)
+            p = p - LongCourseDiscount;
         switch (l.Plan)
         {
-            case "PRO": p = p * 0.9m; break;
-            case "CORP": p = p * 0.85m; break;
-            case "STUDENT": p = p * 0.5m; break;
+            case "PRO": p = p * ProFactor; break;
+            case "CORP": p = p * CorpFactor; break;
+            case "STUDENT": p = p * StudentFactor; break;
         }
         return p;
     }
@@ -58,12 +68,12 @@ public class PriceCalculator
             return 0;
         int d = (DateTime.Today - e.EnrolledOn).Days;
         decimal r = 0;
-        if (d <= 7)
+        if (d <= FullRefundDays)
             r = e.PricePaid;
-        else if (d <= 14)
-            r = e.PricePaid / 2;
+        else if (d <= HalfRefundDays)
+            r = e.PricePaid / HalfRefundDivisor;
         // more than 30% of lessons watched - no refund
-        if (e.Progress > 30)
+        if (e.Progress > MaxProgressForRefund)
             r = 0;
         return Math.Round(r, 2);
     }
