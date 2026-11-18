@@ -124,44 +124,41 @@ public class EnrollService
     private Enrollment EnrollOrThrow(int learnerId, string courseCode, string promo,
         bool payNow, DateTime today)
     {
-        Learner l = repo.FindLearner(learnerId);
-        if (l == null)
-            throw new EnrollmentException("learner " + learnerId + " not found");
-        if (courseCode == null)
-            throw new EnrollmentException("course code is required");
-        Course c = repo.FindCourse(courseCode);
-        if (c == null || c.Archived)
+        Learner learner = RequireLearner(learnerId);
+        Course course = RequireCourse(courseCode);
+
+        if (course == null || course.Archived)
             throw new EnrollmentException("course " + courseCode + " not available");
-        if (today < c.OpensOn || today >= c.ClosesOn)
+        if (today < course.OpensOn || today >= course.ClosesOn)
         {
-            if (l.Plan != "CORP" || (today - c.ClosesOn).Days > CorpGraceDays)
+            if (learner.Plan != "CORP" || (today - course.ClosesOn).Days > CorpGraceDays)
             {
-                Console.WriteLine("   enrollment window is closed for " + c.Code);
-                throw new EnrollmentException("enrollment window is closed for " + c.Code);
+                Console.WriteLine("   enrollment window is closed for " + course.Code);
+                throw new EnrollmentException("enrollment window is closed for " + course.Code);
             }
         }
         foreach (Enrollment x in repo.Enrollments)
         {
-            if (x.CourseCode == c.Code && x.Status != EnrollmentStatus.Dropped
-                && x.LearnerId == l.Id)
+            if (x.CourseCode == course.Code && x.Status != EnrollmentStatus.Dropped
+                && x.LearnerId == learner.Id)
             {
-                Console.WriteLine("   " + l.Email + " is already enrolled in " + c.Code);
+                Console.WriteLine("   " + learner.Email + " is already enrolled in " + course.Code);
                 throw new EnrollmentException("already enrolled");
             }
         }
-        if (!c.PrerequisitesMetBy(l))
+        if (!course.PrerequisitesMetBy(learner))
             throw new EnrollmentException("prerequisites not completed");
-        System.Diagnostics.Debug.Assert(c.Seats > 0, "Seats must be positive");
-        if (CountTaken(c) >= c.Seats)
+        System.Diagnostics.Debug.Assert(course.Seats > 0, "Seats must be positive");
+        if (CountTaken(course) >= course.Seats)
         {
-            if (!c.Waitlist.Contains(l.Id))
+            if (!course.Waitlist.Contains(learner.Id))
             {
-                c.Waitlist.Add(l.Id);
-                log.Write("WAITLIST " + l.Id + " " + c.Code);
+                course.Waitlist.Add(learner.Id);
+                log.Write("WAITLIST " + learner.Id + " " + course.Code);
             }
-            throw new EnrollmentException("no free seats in " + c.Code);
+            throw new EnrollmentException("no free seats in " + course.Code);
         }
-        decimal price = calc.BasePrice(c, l);
+        decimal price = calc.BasePrice(course, learner);
         if (promo != null)
         {
             promo = promo.Trim().ToUpper();
@@ -171,13 +168,13 @@ public class EnrollService
             int pct = PromoCatalog.GetPercent(promo);
             price = price - price * pct / PercentBase;
         }
-        Enrollment e = CreatePending(l, c, price, today);
+        Enrollment e = CreatePending(learner, course, price, today);
         e.PromoCode = promo;
         if (payNow)
         {
             try
             {
-                payments.Charge(l, price);
+                payments.Charge(learner, price);
             }
             catch (Exception ex)
             {
@@ -187,7 +184,23 @@ public class EnrollService
             e.PaidOn = today;
         }
         repo.Enrollments.Add(e);
-        log.Write("ENROLL " + e.Id + " " + l.Id + " " + c.Code + " " + price);
+        log.Write("ENROLL " + e.Id + " " + learner.Id + " " + course.Code + " " + price);
         return e;
+    }
+
+    private Course RequireCourse(string courseCode)
+    {
+        Course course = repo.FindCourse(courseCode);
+        if (courseCode == null)
+            throw new EnrollmentException("course code is required");
+        return course ?? throw new EnrollmentException("course " + courseCode + " not found");
+    }
+
+    private Learner RequireLearner(int learnerId)
+    {
+        Learner l = repo.FindLearner(learnerId);
+        if (l == null)
+            throw new EnrollmentException("learner " + learnerId + " not found");
+        return l;
     }
 }
