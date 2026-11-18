@@ -128,9 +128,58 @@ public class EnrollService
         Course course = RequireCourse(courseCode);
         EnsureWindowIsOpen(course, learner, today);
         EnsureNotEnrolled(course, learner);
-        if (!course.PrerequisitesMetBy(learner))
-            throw new EnrollmentException("prerequisites not completed");
-        System.Diagnostics.Debug.Assert(course.Seats > 0, "Seats must be positive");
+        EnsurePrerequisites(course, learner);
+        EnsureSeatOrWaitlist(course, learner);
+        string appliedPromo = NormalizePromo(promo, today);
+        decimal price = ApplyPromo(calc.BasePrice(course, learner), appliedPromo);
+        Enrollment e = CreatePending(learner, course, price, today);
+        e.PromoCode = appliedPromo;
+        if (payNow)
+            ChargeOrThrow(e, learner, today);
+
+        repo.Enrollments.Add(e);
+        log.Write("ENROLL " + e.Id + " " + learner.Id + " " + course.Code + " " + price);
+        return e;
+    }
+
+    private void ChargeOrThrow(Enrollment e, Learner learner, DateTime today)
+    {
+        try
+        {
+            payments.Charge(learner, e.PricePaid);
+        }
+        catch (Exception ex)
+        {
+            throw new EnrollmentException("payment failed: " + ex.Message);
+        }
+        e.Status = EnrollmentStatus.Active;
+        e.PaidOn = today;
+    }
+
+    private decimal ApplyPromo(decimal basePrice, string appliedPromo)
+    {
+        if (string.IsNullOrEmpty(appliedPromo))
+            return basePrice;
+
+        int pct = PromoCatalog.GetPercent(appliedPromo);
+        return basePrice - basePrice * pct / PercentBase;
+    }
+
+    private string NormalizePromo(string promo, DateTime today)
+    {
+        if (string.IsNullOrWhiteSpace(promo))
+            return string.Empty;
+
+        promo = promo.Trim().ToUpper();
+
+        if (promo == "NEWYEAR" && today.Month != NewYearMonth)
+            return string.Empty;
+
+        return promo;
+    }
+
+    private void EnsureSeatOrWaitlist(Course course, Learner learner)
+    {
         if (CountTaken(course) >= course.Seats)
         {
             if (!course.Waitlist.Contains(learner.Id))
@@ -140,34 +189,13 @@ public class EnrollService
             }
             throw new EnrollmentException("no free seats in " + course.Code);
         }
-        decimal price = calc.BasePrice(course, learner);
-        if (promo != null)
-        {
-            promo = promo.Trim().ToUpper();
-            // тимчасово, поки нема дат дії: NEWYEAR - січень
-            if (promo == "NEWYEAR" && today.Month != NewYearMonth)
-                promo = "";
-            int pct = PromoCatalog.GetPercent(promo);
-            price = price - price * pct / PercentBase;
-        }
-        Enrollment e = CreatePending(learner, course, price, today);
-        e.PromoCode = promo;
-        if (payNow)
-        {
-            try
-            {
-                payments.Charge(learner, price);
-            }
-            catch (Exception ex)
-            {
-                throw new EnrollmentException("payment failed: " + ex.Message);
-            }
-            e.Status = EnrollmentStatus.Active;
-            e.PaidOn = today;
-        }
-        repo.Enrollments.Add(e);
-        log.Write("ENROLL " + e.Id + " " + learner.Id + " " + course.Code + " " + price);
-        return e;
+    }
+
+    private static void EnsurePrerequisites(Course course, Learner learner)
+    {
+        if (!course.PrerequisitesMetBy(learner))
+            throw new EnrollmentException("prerequisites not completed");
+        System.Diagnostics.Debug.Assert(course.Seats > 0, "Seats must be positive");
     }
 
     private void EnsureNotEnrolled(Course course, Learner learner)
