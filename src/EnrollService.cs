@@ -115,9 +115,9 @@ public class EnrollService
         {
             return EnrollOrThrow(learnerId, courseCode, promo, payNow, now ?? DateTime.Today);
         }
-        catch (Exception)
+        catch (EnrollmentException)
         {
-            return null;   // TODO TD-01: звузити catch (див. R18)
+            return null;
         }
     }
 
@@ -127,6 +127,8 @@ public class EnrollService
         Learner l = repo.FindLearner(learnerId);
         if (l == null)
             throw new EnrollmentException("learner " + learnerId + " not found");
+        if (courseCode == null)
+            throw new EnrollmentException("course code is required");
         Course c = repo.FindCourse(courseCode);
         if (c == null || c.Archived)
             throw new EnrollmentException("course " + courseCode + " not available");
@@ -149,7 +151,7 @@ public class EnrollService
         }
         if (!c.PrerequisitesMetBy(l))
             throw new EnrollmentException("prerequisites not completed");
-        // Seats is never 0 here - the admin form does not allow it
+        System.Diagnostics.Debug.Assert(c.Seats > 0, "Seats must be positive");
         if (CountTaken(c) >= c.Seats)
         {
             if (!c.Waitlist.Contains(l.Id))
