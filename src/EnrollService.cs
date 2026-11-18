@@ -127,15 +127,7 @@ public class EnrollService
         Learner learner = RequireLearner(learnerId);
         Course course = RequireCourse(courseCode);
         EnsureWindowIsOpen(course, learner, today);
-        foreach (Enrollment x in repo.Enrollments)
-        {
-            if (x.CourseCode == course.Code && x.Status != EnrollmentStatus.Dropped
-                && x.LearnerId == learner.Id)
-            {
-                Console.WriteLine("   " + learner.Email + " is already enrolled in " + course.Code);
-                throw new EnrollmentException("already enrolled");
-            }
-        }
+        EnsureNotEnrolled(course, learner);
         if (!course.PrerequisitesMetBy(learner))
             throw new EnrollmentException("prerequisites not completed");
         System.Diagnostics.Debug.Assert(course.Seats > 0, "Seats must be positive");
@@ -176,6 +168,19 @@ public class EnrollService
         repo.Enrollments.Add(e);
         log.Write("ENROLL " + e.Id + " " + learner.Id + " " + course.Code + " " + price);
         return e;
+    }
+
+    private void EnsureNotEnrolled(Course course, Learner learner)
+    {
+        foreach (Enrollment x in repo.Enrollments)
+        {
+            if (x.CourseCode == course.Code && x.Status != EnrollmentStatus.Dropped
+                && x.LearnerId == learner.Id)
+            {
+                Console.WriteLine("   " + learner.Email + " is already enrolled in " + course.Code);
+                throw new EnrollmentException("already enrolled");
+            }
+        }
     }
 
     private static void EnsureWindowIsOpen(Course course, Learner learner, DateTime today)
