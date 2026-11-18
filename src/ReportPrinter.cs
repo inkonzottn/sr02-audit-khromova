@@ -11,7 +11,7 @@ public class ReportPrinter
         repo = r;
     }
 
-    // full = print every learner, otherwise totals only
+    // TODO TD-02
     public void PrintRoster(string code, bool full)
     {
         Course c = repo.FindCourse(code);

@@ -5,6 +5,7 @@ public static class PromoCatalog
 {
     public static Dictionary<string, int> Used = new Dictionary<string, int>();
 
+    // TODO TD-01: CC = 9, потрібен Replace Conditional with Table;
     public static int GetPercent(string code)
     {
         int pct = 0;

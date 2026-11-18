@@ -2,6 +2,7 @@ namespace OnlineCourses;
 
 // Оплата з внутрішнього балансу слухача.
 // CORP: не списуємо, рахунок роботодавцю раз на місяць.
+// TODO: TD-06
 public class PaymentService
 {
     public static int TxCount = 0;

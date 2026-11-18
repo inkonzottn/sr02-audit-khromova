@@ -48,7 +48,7 @@ public class EnrollService
             return false;
         LastRefund = r;
         try { if (r > 0) payments.Refund(l, r); }
-        catch { }    // TODO: повторити пізніше
+        catch { }    // TODO: TD-05 повторити пізніше
         log.Write("DROP " + e.Id + " refund " + r);
         PromoteFromWaitlist(repo.FindCourse(e.CourseCode));
         return true;
@@ -96,6 +96,7 @@ public class EnrollService
         return taken;
     }
 
+    // TODO: TD-04
     private Enrollment CreatePending(Learner learner, Course course, decimal price, DateTime today)
     {
         Enrollment e = new Enrollment();
@@ -213,7 +214,7 @@ public class EnrollService
             return;
         if (HasCorporateGrace(c, l, today))
             return;
-        Console.WriteLine("   enrollment window is closed for " + c.Code);
+        Console.WriteLine("   enrollment window is closed for " + c.Code); // TODO: TD-07
         throw new EnrollmentException("enrollment window is closed for " + c.Code);
     }
 
@@ -233,9 +234,11 @@ public class EnrollService
         return l;
     }
 
+    // TODO: TD-04
     private static bool IsOutsideWindow(Course c, DateTime today)
     => today < c.OpensOn || today >= c.ClosesOn;
 
+    // TODO: TD-04
     private static bool HasCorporateGrace(Course c, Learner l, DateTime today)
         => l.Plan == "CORP" && (today - c.ClosesOn).Days <= CorpGraceDays;
 }
