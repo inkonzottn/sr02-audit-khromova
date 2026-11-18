@@ -213,14 +213,14 @@ public class EnrollService
 
     private void EnsureWindowIsOpen(Course c, Learner l, DateTime today)
     {
-        if (!(today < c.OpensOn || today >= c.ClosesOn))
+        if (!IsOutsideWindow(c, today))
             return;
-        if (l.Plan == "CORP" && (today - c.ClosesOn).Days <= CorpGraceDays)
+        if (HasCorporateGrace(c, l, today))
             return;
         Console.WriteLine("   enrollment window is closed for " + c.Code);
         throw new EnrollmentException("enrollment window is closed for " + c.Code);
     }
-    
+
     private Course RequireCourse(string courseCode)
     {
         Course course = repo.FindCourse(courseCode);
@@ -236,4 +236,10 @@ public class EnrollService
             throw new EnrollmentException("learner " + learnerId + " not found");
         return l;
     }
+
+    private static bool IsOutsideWindow(Course c, DateTime today)
+    => today < c.OpensOn || today >= c.ClosesOn;
+
+    private static bool HasCorporateGrace(Course c, Learner l, DateTime today)
+        => l.Plan == "CORP" && (today - c.ClosesOn).Days <= CorpGraceDays;
 }
