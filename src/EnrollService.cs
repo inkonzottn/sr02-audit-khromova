@@ -20,88 +20,6 @@ public class EnrollService
         repo = r;
     }
 
-    // Записує слухача на курс.
-    // Returns null if the learner cannot be enrolled (the reason is in the audit log).
-    public Enrollment Enroll(int learnerId, string courseCode, string promo, bool payNow, DateTime? now = null)
-    {
-        Enrollment e = null;
-        try
-        {
-            Learner l = repo.FindLearner(learnerId);
-            if (l == null)
-                return null;
-            Course c = repo.FindCourse(courseCode);
-            if (c == null || c.Archived)
-                return null;
-            DateTime today = now ?? DateTime.Today;
-            if (today < c.OpensOn || today >= c.ClosesOn)
-            {
-                // corporate clients get 3 extra days after close (agreement with HR partners)
-                if (l.Plan != "CORP" || (today - c.ClosesOn).Days > CorpGraceDays)
-                {
-                    Console.WriteLine("   enrollment window is closed for " + c.Code);
-                    return null;
-                }
-            }
-            // count taken seats and check that the learner is not enrolled yet
-            foreach (Enrollment x in repo.Enrollments)
-            {
-                if (x.CourseCode == c.Code && x.Status != EnrollmentStatus.Dropped
-                    && x.LearnerId == l.Id)
-                {
-                    Console.WriteLine("   " + l.Email + " is already enrolled in " + c.Code);
-                    return null;
-                }
-            }
-            int taken = 0;
-            if (CountTaken(c) >= c.Seats)
-            if (!c.PrerequisitesMetBy(l))
-                return null;
-            // Seats is never 0 here - the admin form does not allow it
-            if (taken >= c.Seats)
-            {
-                if (!c.Waitlist.Contains(l.Id))
-                {
-                    c.Waitlist.Add(l.Id);
-                    log.Write("WAITLIST " + l.Id + " " + c.Code);
-                }
-                return null;
-            }
-            decimal price = calc.BasePrice(c, l);
-            if (promo != null)
-            {
-                promo = promo.Trim().ToUpper();
-                // тимчасово, поки нема дат дії: NEWYEAR - січень
-                if (promo == "NEWYEAR" && today.Month != NewYearMonth)
-                    promo = "";
-                int pct = PromoCatalog.GetPercent(promo);
-                price = price - price * pct / PercentBase;
-            }
-            e = CreatePending(l, c, price, today);
-            e.PromoCode = promo;
-            if (payNow)
-            {
-                try
-                {
-                    payments.Charge(l, price);
-                    e.Status = EnrollmentStatus.Active;
-                    e.PaidOn = today;
-                }
-                catch
-                {
-                    return null;         // не вистачило коштів
-                }
-            }
-            repo.Enrollments.Add(e);
-            log.Write("ENROLL " + e.Id + " " + l.Id + " " + c.Code + " " + price);
-        }
-        catch (Exception)
-        {
-            return null;
-        }
-        return e;
-    }
-
     // підтвердження оплати для Pending
     public bool Activate(int enrollmentId)
     {
@@ -187,6 +105,87 @@ public class EnrollService
         e.PricePaid = price;
         e.EnrolledOn = today;
         e.Status = EnrollmentStatus.Pending;
+        return e;
+    }
+
+        public Enrollment Enroll(int learnerId, string courseCode, string promo, bool payNow,
+        DateTime? now = null)
+    {
+        try
+        {
+            return EnrollOrThrow(learnerId, courseCode, promo, payNow, now ?? DateTime.Today);
+        }
+        catch (Exception)
+        {
+            return null;   // TODO TD-01: звузити catch (див. R18)
+        }
+    }
+
+    private Enrollment EnrollOrThrow(int learnerId, string courseCode, string promo,
+        bool payNow, DateTime today)
+    {
+        Learner l = repo.FindLearner(learnerId);
+        if (l == null)
+            throw new EnrollmentException("learner " + learnerId + " not found");
+        Course c = repo.FindCourse(courseCode);
+        if (c == null || c.Archived)
+            throw new EnrollmentException("course " + courseCode + " not available");
+        if (today < c.OpensOn || today >= c.ClosesOn)
+        {
+            if (l.Plan != "CORP" || (today - c.ClosesOn).Days > CorpGraceDays)
+            {
+                Console.WriteLine("   enrollment window is closed for " + c.Code);
+                throw new EnrollmentException("enrollment window is closed for " + c.Code);
+            }
+        }
+        foreach (Enrollment x in repo.Enrollments)
+        {
+            if (x.CourseCode == c.Code && x.Status != EnrollmentStatus.Dropped
+                && x.LearnerId == l.Id)
+            {
+                Console.WriteLine("   " + l.Email + " is already enrolled in " + c.Code);
+                throw new EnrollmentException("already enrolled");
+            }
+        }
+        if (!c.PrerequisitesMetBy(l))
+            throw new EnrollmentException("prerequisites not completed");
+        // Seats is never 0 here - the admin form does not allow it
+        if (CountTaken(c) >= c.Seats)
+        {
+            if (!c.Waitlist.Contains(l.Id))
+            {
+                c.Waitlist.Add(l.Id);
+                log.Write("WAITLIST " + l.Id + " " + c.Code);
+            }
+            throw new EnrollmentException("no free seats in " + c.Code);
+        }
+        decimal price = calc.BasePrice(c, l);
+        if (promo != null)
+        {
+            promo = promo.Trim().ToUpper();
+            // тимчасово, поки нема дат дії: NEWYEAR - січень
+            if (promo == "NEWYEAR" && today.Month != NewYearMonth)
+                promo = "";
+            int pct = PromoCatalog.GetPercent(promo);
+            price = price - price * pct / PercentBase;
+        }
+        Enrollment e = CreatePending(l, c, price, today);
+        e.PromoCode = promo;
+        if (payNow)
+        {
+            try
+            {
+                payments.Charge(l, price);
+            }
+            catch (Exception ex)
+            {
+                throw new EnrollmentException("payment failed: " + ex.Message);
+            }
+            e.Status = EnrollmentStatus.Active;
+            e.PaidOn = today;
+        }
+        repo.Enrollments.Add(e);
+        log.Write("ENROLL " + e.Id + " " + l.Id + " " + c.Code + " " + price);
         return e;
     }
 }
