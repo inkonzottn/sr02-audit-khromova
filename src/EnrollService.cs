@@ -128,10 +128,7 @@ public class EnrollService
     // підтвердження оплати для Pending
     public bool Activate(int enrollmentId)
     {
-        Enrollment e = null;
-        foreach (Enrollment x in repo.Enrollments)
-            if (x.Id == enrollmentId)
-                e = x;
+        Enrollment e = repo.FindEnrollment(enrollmentId);
         if (e == null)
             return false;
         Learner l = repo.FindLearner(e.LearnerId);
@@ -147,10 +144,7 @@ public class EnrollService
     // відмова від курсу, гроші повертаються на баланс
     public bool Drop(int enrollmentId)
     {
-        Enrollment e = null;
-        foreach (Enrollment x in repo.Enrollments)
-            if (x.Id == enrollmentId)
-                e = x;
+        Enrollment e = repo.FindEnrollment(enrollmentId);
         if (e == null)
             return false;
         Learner l = repo.FindLearner(e.LearnerId);
@@ -167,10 +161,7 @@ public class EnrollService
 
     public bool Complete(int enrollmentId, int score)
     {
-        Enrollment e = null;
-        foreach (Enrollment x in repo.Enrollments)
-            if (x.Id == enrollmentId)
-                e = x;
+        Enrollment e = repo.FindEnrollment(enrollmentId);
         if (e == null)
             return false;
         Learner l = repo.FindLearner(e.LearnerId);
@@ -179,7 +170,7 @@ public class EnrollService
         if (!e.ChangeStatus(EnrollmentStatus.Completed))
             return false;
         e.Score = score;
-        e.Progress = 100;
+        e.Progress = PercentBase;
         if (!l.CompletedCourses.Contains(e.CourseCode))
             l.CompletedCourses.Add(e.CourseCode);
         log.Write("COMPLETE " + e.Id + " score " + score);

@@ -90,4 +90,12 @@ public class CourseRepository
                 return l;
         return null;
     }
+
+    public Enrollment FindEnrollment(int id)
+    {
+        foreach (Enrollment e in Enrollments)
+            if (e.Id == id)
+                return e;
+        return null;
+    }
 }
