@@ -167,14 +167,10 @@ public class EnrollService
 
     private string NormalizePromo(string promo, DateTime today)
     {
-        if (string.IsNullOrWhiteSpace(promo))
-            return string.Empty;
-
         promo = promo.Trim().ToUpper();
-
-        if (promo == "NEWYEAR" && today.Month != NewYearMonth)
-            return string.Empty;
-
+        bool outOfSeason = promo == "NEWYEAR" && today.Month != NewYearMonth;
+        if (outOfSeason)
+            promo = "";
         return promo;
     }
 
