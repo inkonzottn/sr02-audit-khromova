@@ -83,4 +83,5 @@ public class PriceCalculator
     {
         return weeks > 6 ? c.Price * weeks / 6 : c.Price;
     }
+
 }

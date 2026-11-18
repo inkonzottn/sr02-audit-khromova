@@ -77,13 +77,7 @@ public class EnrollService
                 int pct = PromoCatalog.GetPercent(promo);
                 price = price - price * pct / PercentBase;
             }
-            e = new Enrollment();
-            e.Id = CourseRepository.NextId++;
-            e.LearnerId = l.Id;
-            e.CourseCode = c.Code;
-            e.PricePaid = price;         // для Pending - сума до сплати
-            e.EnrolledOn = today;
-            e.Status = EnrollmentStatus.Pending;
+            e = CreatePending(l, c, price, today);
             e.PromoCode = promo;
             if (payNow)
             {
@@ -170,13 +164,7 @@ public class EnrollService
         c.Waitlist.RemoveAt(0);
         decimal price = calc.BasePrice(c, l);
         DateTime today = DateTime.Today;
-        Enrollment e = new Enrollment();
-        e.Id = CourseRepository.NextId++;
-        e.LearnerId = l.Id;
-        e.CourseCode = c.Code;
-        e.PricePaid = price;
-        e.EnrolledOn = today;
-        e.Status = EnrollmentStatus.Pending;
+        Enrollment e = CreatePending(l, c, price, today);
         repo.Enrollments.Add(e);
         Console.WriteLine("   [waitlist] " + l.Email + " moved to " + c.Code + " as #" + e.Id);
     }
@@ -188,5 +176,17 @@ public class EnrollService
             if (x.CourseCode == c.Code && x.Status != EnrollmentStatus.Dropped)
                 taken++;
         return taken;
+    }
+
+    private Enrollment CreatePending(Learner learner, Course course, decimal price, DateTime today)
+    {
+        Enrollment e = new Enrollment();
+        e.Id = CourseRepository.NextId++;
+        e.LearnerId = learner.Id;
+        e.CourseCode = course.Code;
+        e.PricePaid = price;
+        e.EnrolledOn = today;
+        e.Status = EnrollmentStatus.Pending;
+        return e;
     }
 }
