@@ -47,19 +47,19 @@ public class EnrollService
                 }
             }
             // count taken seats and check that the learner is not enrolled yet
-            int taken = 0;
             foreach (Enrollment x in repo.Enrollments)
             {
-                if (x.CourseCode == c.Code && x.Status != EnrollmentStatus.Dropped)
+                if (x.CourseCode == c.Code && x.Status != EnrollmentStatus.Dropped
+                    && x.LearnerId == l.Id)
                 {
-                    taken++;
-                    if (x.LearnerId == l.Id)
-                    {
-                        Console.WriteLine("   " + l.Email + " is already enrolled in " + c.Code);
-                        return null;
-                    }
+                    Console.WriteLine("   " + l.Email + " is already enrolled in " + c.Code);
+                    return null;
                 }
             }
+            int taken = 0;
+            foreach (Enrollment x in repo.Enrollments)
+    if (x.CourseCode == c.Code && x.Status != EnrollmentStatus.Dropped)
+        taken++;
             if (!do_check(c))
                 return null;
             // Seats is never 0 here - the admin form does not allow it
