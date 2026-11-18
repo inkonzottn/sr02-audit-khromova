@@ -16,6 +16,14 @@ public class Course
     public bool Archived;
     public List<string> Prerequisites = new List<string>();
     public List<int> Waitlist = new List<int>();   // learner ids, first come first served
+
+    public bool PrerequisitesMetBy(Learner learner)
+    {
+        foreach (string p in Prerequisites)
+            if (!learner.CompletedCourses.Contains(p))
+                return false;
+        return true;
+    }
 }
 
 public class Learner

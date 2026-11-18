@@ -8,9 +8,7 @@ public class EnrollService
     private PaymentService payments = new PaymentService();
     private PriceCalculator calc = new PriceCalculator();
     private AuditLog log = new AuditLog();
-    private Learner tmpLearner;      // learner being enrolled right now, see HasCompletedPrerequisites
     public decimal LastRefund;       // для екрана підтвердження
-
     private const int CorpGraceDays = 3;
     private const int PercentBase = 100;
     private const int NewYearMonth = 1;
@@ -35,7 +33,6 @@ public class EnrollService
             Course c = repo.FindCourse(courseCode);
             if (c == null || c.Archived)
                 return null;
-            tmpLearner = l;
             DateTime today = now ?? DateTime.Today;
             if (today < c.OpensOn || today >= c.ClosesOn)
             {
@@ -58,7 +55,7 @@ public class EnrollService
             }
             int taken = 0;
             if (CountTaken(c) >= c.Seats)
-            if (!HasCompletedPrerequisites(c))
+            if (!c.PrerequisitesMetBy(l))
                 return null;
             // Seats is never 0 here - the admin form does not allow it
             if (taken >= c.Seats)
@@ -109,16 +106,6 @@ public class EnrollService
             return null;
         }
         return e;
-    }
-
-    // перевірка пререквізитів (tmpLearner заповнює Enroll)
-    private bool HasCompletedPrerequisites(Course c)
-    {
-        bool satisfied = true;
-        foreach (string p in c.Prerequisites)
-            if (!tmpLearner.CompletedCourses.Contains(p))
-                satisfied = false;
-        return satisfied;
     }
 
     // підтвердження оплати для Pending
